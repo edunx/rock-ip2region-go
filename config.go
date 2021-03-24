@@ -1,6 +1,7 @@
 package ip2region
 
 import (
+	"github.com/edunx/lua"
 	"os"
 )
 
@@ -19,6 +20,8 @@ type IpInfo struct {
 }
 
 type Ip2Region struct {
+	lua.Super
+
 	// db file handler
 	dbFileHandler *os.File
 

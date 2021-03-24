@@ -1,23 +1,21 @@
----
-   磐石IP2Region封装
----
+# rock-ip2reion-go
+## 说明 
+`ipv4地址查询模块`
 
-# 配置
+## 函数说明
+
+### rock.ip2reion
+- 函数: rock.ip2region(string)
+- 语法: rock.ip2reiogn( "ip.db" )
 ```lua
-    rock.download{
-        save = "resource/ip2region.db",
-        url = "http://xxxx.com/ip2region.db"
-    }
+    local r = rock.request
+    r.output("resource/ip.db").GET("http://xxx.com/ip2region.db")
 
-    local ip = rock.ip2region{
-        db = "resource/ip2region.db",
-    }
-
-    local cityid , info , err = ip.memory_search("202.96.209.133")
-    print(info)
+    local ip = rock.ip2region("resource/ip.db")
+    ip.debug("122.112.221.2" , "114.114.114.114")
 ```
 
-# 调用
+# 安装使用
 ```golang
     import (
         ip "githbu.com/edunx/rock-ip2region-go"
@@ -25,5 +23,5 @@
 
     var ud  *ip.Ip2Region
 
-    ud.Search( "127.0.0.1" )
+    city , info , err := ud.Search( "127.0.0.1" )
 ```

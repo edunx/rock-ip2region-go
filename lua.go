@@ -1,85 +1,49 @@
 package ip2region
 
 import (
+	"fmt"
 	"github.com/edunx/lua"
 	pub "github.com/edunx/rock-public-go"
 )
 
-const (
-	MT string = "ROCK_IP2REGION_MT"
-)
-
-
-func CheckIp2RegionUserdata( L *lua.LState , idx int ) *Ip2Region {
-	ud := L.CheckUserData( idx )
-
-	switch v := ud.Value.(type) {
-	case *Ip2Region:
-		return ud.Value.(*Ip2Region)
-	default:
-		L.RaiseError("expect invalid type , must be Ip2geion , got %T" , v )
-		return nil
+func (self *Ip2Region) debug(L *lua.LState , args *lua.Args) lua.LValue {
+	n := args.Len()
+	if n <= 0 {
+		return lua.LNil
 	}
+
+	for i := 1 ; i<=n ; i++ {
+		ip := args.CheckString(L , i)
+		city , info , err := self.Search( ip )
+		if err != nil {
+			return lua.LString( err.Error() )
+		}
+		fmt.Printf("ip: %s city: %d , info: %s\n" ,ip , city , info)
+	}
+	return lua.LNil
 }
 
-func CreateIp2RegionUserData(L *lua.LState) int {
-	opt := L.CheckTable(1)
+func (self *Ip2Region) Index(L *lua.LState , key string ) lua.LValue {
+	if key == "debug" { return lua.NewGFunction(self.debug) }
+	return lua.LNil
+}
 
-	v := &Ip2Region{
-		dbFile:  opt.CheckString("db" , "resource/ip2region.db"),
-	}
+func (self *Ip2Region) ToLightUserData(L *lua.LState) *lua.LightUserData {
+	return L.NewLightUserData( self )
+}
+
+func createRegionLightUserData(L *lua.LState , args *lua.Args ) lua.LValue {
+	path := args.CheckString(L , 1)
+	v := &Ip2Region{ dbFile: path }
 
 	if err := v.Start(); err != nil {
 		L.RaiseError("start ip2region fail , e: %v" , err)
-		return 0
+		return lua.LNil
 	}
 	pub.Out.Debug("start ip2regin successful , info: %s" , v.dbFile)
-
-	ud := L.NewUserDataByInterface( v , MT)
-	L.Push(ud)
-	return 1
+	return v.ToLightUserData(L)
 }
 
 func LuaInjectApi(L *lua.LState , parent *lua.LTable) {
-	mt := L.NewTypeMetatable( MT )
-
-	L.SetField(mt , "__index" , L.NewFunction(Get))
-	L.SetField(mt , "__newindex" , L.NewFunction(Set))
-
-	L.SetField(parent , "ip2region" , L.NewFunction(CreateIp2RegionUserData))
-}
-
-func Get(L *lua.LState) int {
-	self := CheckIp2RegionUserdata(L , 1)
-	name := L.CheckString(2)
-	switch name {
-	case "memory_search":
-		L.Push(L.NewFunction( func (L *lua.LState) int {
-			ip := L.CheckString(1)
-			city , info , err := self.Search( ip )
-			if err != nil {
-				L.Push(lua.LNil)
-				L.Push(lua.LNil)
-				L.Push(lua.LString(err.Error()))
-				return 3
-			}
-			L.Push(lua.LNumber(city))
-			L.Push(lua.LString(info))
-			L.Push(lua.LNil)
-			return 3
-		}))
-		return 1
-	default:
-		return 0
-	}
-
-	return 0
-}
-
-func Set(L *lua.LState) int {
-	return 0
-}
-
-func (this *Ip2Region) ToUserData(L *lua.LState) *lua.LUserData {
-	return L.NewUserDataByInterface( this , MT )
+	L.SetField(parent , "ip2region" , lua.NewGFunction( createRegionLightUserData ) )
 }
