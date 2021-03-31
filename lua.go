@@ -44,6 +44,6 @@ func createRegionLightUserData(L *lua.LState , args *lua.Args ) lua.LValue {
 	return v.ToLightUserData(L)
 }
 
-func LuaInjectApi(L *lua.LState , parent *lua.LTable) {
-	L.SetField(parent , "ip2region" , lua.NewGFunction( createRegionLightUserData ) )
+func LuaInjectApi(L *lua.LState , parent *lua.UserKV) {
+	parent.Set("ip2region" , lua.NewGFunction( createRegionLightUserData ) )
 }
